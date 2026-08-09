@@ -91,8 +91,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Barlow:wght@300;400;500;600;700&display=swap",
+      },
+      {
+        rel: "stylesheet",
+        href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+      },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
+
   }),
   shellComponent: RootShell,
   component: RootComponent,

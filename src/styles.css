@@ -132,6 +132,35 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+@theme inline {
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-body: "Barlow", ui-sans-serif, system-ui, sans-serif;
+
+  --color-qp-bg: var(--qp-bg);
+  --color-qp-surface: var(--qp-surface);
+  --color-qp-surface-2: var(--qp-surface-2);
+  --color-qp-primary: var(--qp-primary);
+  --color-qp-primary-soft: var(--qp-primary-soft);
+  --color-qp-danger: var(--qp-danger);
+  --color-qp-danger-soft: var(--qp-danger-soft);
+  --color-qp-text: var(--qp-text);
+  --color-qp-muted: var(--qp-muted);
+  --color-qp-line: var(--qp-line);
+}
+
+:root {
+  --qp-bg: oklch(0.196 0.021 296);
+  --qp-surface: oklch(0.246 0.025 296);
+  --qp-surface-2: oklch(0.294 0.028 296);
+  --qp-primary: oklch(0.55 0.24 295);
+  --qp-primary-soft: oklch(0.65 0.2 295);
+  --qp-danger: oklch(0.63 0.22 25);
+  --qp-danger-soft: oklch(0.57 0.22 25);
+  --qp-text: oklch(0.965 0.012 300);
+  --qp-muted: oklch(0.72 0.03 295);
+  --qp-line: oklch(1 0 0 / 8%);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
@@ -140,5 +169,114 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-body);
   }
 }
+
+/* ---------------- Liquid glass design system (landing page) --------------- */
+
+.liquid-glass {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.05) 35%,
+    rgba(255, 255, 255, 0.02) 60%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.liquid-glass-strong {
+  -webkit-backdrop-filter: blur(50px);
+  backdrop-filter: blur(50px);
+  box-shadow:
+    4px 4px 4px rgba(0, 0, 0, 0.05),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* --------------------------- QueuePredict app ---------------------------- */
+
+.qp-scope {
+  background-color: var(--qp-bg);
+  color: var(--qp-text);
+  font-family: var(--font-body);
+}
+
+.qp-card {
+  background: rgba(255, 255, 255, 0.05);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--qp-line);
+  box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.9);
+}
+
+.qp-gradient {
+  background-image: linear-gradient(135deg, #7c3aed 0%, #9b5cff 100%);
+}
+
+.qp-gradient-danger {
+  background-image: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+.leaflet-container {
+  background: #17151f;
+  font-family: var(--font-body);
+}
+
+.leaflet-control-attribution {
+  background: rgba(23, 21, 31, 0.7) !important;
+  color: #a9a3b8 !important;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #9b5cff !important;
+}
+
+@keyframes qp-pulse-ring {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.qp-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: qp-pulse-ring 1.8s ease-out infinite;
+}
+
