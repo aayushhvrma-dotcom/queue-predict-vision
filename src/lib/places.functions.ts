@@ -131,7 +131,8 @@ export const getNearbyPlaces = createServerFn({ method: "POST" })
 
     try {
       rows = await queryOverpass(data.lat, data.lng, data.category, data.radius);
-    } catch {
+    } catch (error) {
+      console.error("Overpass lookup failed:", error);
       degraded = true;
     }
 
