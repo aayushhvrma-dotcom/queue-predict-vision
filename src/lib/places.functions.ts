@@ -91,7 +91,7 @@ async function queryOverpass(
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
+        "Accept-Encoding": "gzip, deflate",
         "User-Agent": "QueuePredict/1.0 (queue prediction app)",
       },
       body: `data=${encodeURIComponent(query)}`,
