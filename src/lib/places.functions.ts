@@ -89,7 +89,11 @@ async function queryOverpass(
   try {
     const response = await fetch("https://overpass-api.de/api/interpreter", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+        "User-Agent": "QueuePredict/1.0 (queue prediction app)",
+      },
       body: `data=${encodeURIComponent(query)}`,
       signal: controller.signal,
     });
