@@ -16,32 +16,148 @@ export type Database = {
     Tables: {
       crowd_reports: {
         Row: {
+          counters_open: number | null
+          counters_open_raw: string | null
           created_at: string
           crowd_level: string
           estimated_wait_mins: number
           id: string
+          people_ahead: number | null
+          people_ahead_raw: string | null
           place_id: string
+          predicted_wait_mins: number | null
+          prediction_accuracy: number | null
+          service_type: string | null
+          trust_weight: number
           user_id: string
         }
         Insert: {
+          counters_open?: number | null
+          counters_open_raw?: string | null
           created_at?: string
           crowd_level: string
           estimated_wait_mins?: number
           id?: string
+          people_ahead?: number | null
+          people_ahead_raw?: string | null
           place_id: string
+          predicted_wait_mins?: number | null
+          prediction_accuracy?: number | null
+          service_type?: string | null
+          trust_weight?: number
           user_id: string
         }
         Update: {
+          counters_open?: number | null
+          counters_open_raw?: string | null
           created_at?: string
           crowd_level?: string
           estimated_wait_mins?: number
           id?: string
+          people_ahead?: number | null
+          people_ahead_raw?: string | null
           place_id?: string
+          predicted_wait_mins?: number | null
+          prediction_accuracy?: number | null
+          service_type?: string | null
+          trust_weight?: number
           user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "crowd_reports_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_artifacts: {
+        Row: {
+          algorithm: string
+          created_at: string
+          eligible_place_ids: string[]
+          feature_names: Json
+          heuristic_mae: number | null
+          id: string
+          intercept: number
+          is_active: boolean
+          lambda: number
+          ml_mae: number | null
+          mode: string
+          sample_count: number
+          trained_at: string
+          version: number
+          weights: Json
+        }
+        Insert: {
+          algorithm?: string
+          created_at?: string
+          eligible_place_ids?: string[]
+          feature_names: Json
+          heuristic_mae?: number | null
+          id?: string
+          intercept?: number
+          is_active?: boolean
+          lambda?: number
+          ml_mae?: number | null
+          mode?: string
+          sample_count: number
+          trained_at?: string
+          version: number
+          weights: Json
+        }
+        Update: {
+          algorithm?: string
+          created_at?: string
+          eligible_place_ids?: string[]
+          feature_names?: Json
+          heuristic_mae?: number | null
+          id?: string
+          intercept?: number
+          is_active?: boolean
+          lambda?: number
+          ml_mae?: number | null
+          mode?: string
+          sample_count?: number
+          trained_at?: string
+          version?: number
+          weights?: Json
+        }
+        Relationships: []
+      }
+      place_hourly_stats: {
+        Row: {
+          avg_wait_mins: number
+          day_of_week: number
+          hour_of_day: number
+          id: string
+          place_id: string
+          sample_count: number
+          updated_at: string
+        }
+        Insert: {
+          avg_wait_mins: number
+          day_of_week: number
+          hour_of_day: number
+          id?: string
+          place_id: string
+          sample_count?: number
+          updated_at?: string
+        }
+        Update: {
+          avg_wait_mins?: number
+          day_of_week?: number
+          hour_of_day?: number
+          id?: string
+          place_id?: string
+          sample_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_hourly_stats_place_id_fkey"
             columns: ["place_id"]
             isOneToOne: false
             referencedRelation: "places"
@@ -59,6 +175,7 @@ export type Database = {
           longitude: number
           name: string
           source_id: string | null
+          total_counters: number | null
         }
         Insert: {
           address?: string | null
@@ -69,6 +186,7 @@ export type Database = {
           longitude: number
           name: string
           source_id?: string | null
+          total_counters?: number | null
         }
         Update: {
           address?: string | null
@@ -79,8 +197,50 @@ export type Database = {
           longitude?: number
           name?: string
           source_id?: string | null
+          total_counters?: number | null
         }
         Relationships: []
+      }
+      prediction_shadow_log: {
+        Row: {
+          created_at: string
+          heuristic_wait: number
+          id: string
+          ml_wait: number | null
+          mode: string
+          model_version: number | null
+          place_id: string
+          served_wait: number
+        }
+        Insert: {
+          created_at?: string
+          heuristic_wait: number
+          id?: string
+          ml_wait?: number | null
+          mode: string
+          model_version?: number | null
+          place_id: string
+          served_wait: number
+        }
+        Update: {
+          created_at?: string
+          heuristic_wait?: number
+          id?: string
+          ml_wait?: number | null
+          mode?: string
+          model_version?: number | null
+          place_id?: string
+          served_wait?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prediction_shadow_log_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -137,7 +297,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      normalize_count: { Args: { raw: string }; Returns: number }
+      qp_build_features: {
+        Args: {
+          p_at: string
+          p_baseline: number
+          p_counters_open: number
+          p_recent_avg: number
+          p_recent_count: number
+          p_service_type: string
+          p_total_counters: number
+        }
+        Returns: number[]
+      }
+      qp_eligible_places: { Args: { min_reports?: number }; Returns: string[] }
+      qp_feature_names: { Args: never; Returns: string[] }
+      qp_predict_wait: {
+        Args: { p_at?: string; p_place_id: string }
+        Returns: Json
+      }
+      qp_train_ridge: { Args: { p_lambda?: number }; Returns: Json }
+      refresh_place_hourly_stats: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never
