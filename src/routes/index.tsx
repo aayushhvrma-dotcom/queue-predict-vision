@@ -148,8 +148,10 @@ function Landing() {
             className="mt-14 flex flex-wrap gap-4"
           >
             {[
-              { value: "34.5 Min", label: "Average wait avoided per trip" },
-              { value: "2.8B+", label: "Queue signals processed to date" },
+              { value: "LESS WAITING", label: "Skip the busiest hours" },
+              { value: "BETTER PLANNING", label: "Pick the right time to go" },
+              { value: "REAL-TIME INFORMATION", label: "Live crowd updates from users" },
+              { value: "SMARTER DECISIONS", label: "Choose the fastest nearby option" },
             ].map((stat) => (
               <div
                 key={stat.value}
