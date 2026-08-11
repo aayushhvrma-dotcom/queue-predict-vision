@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://queue-predict-vision.lovable.app/sitemap.xml
