@@ -206,14 +206,14 @@ function Landing() {
             className="max-w-2xl"
           >
             <span className="rounded-full liquid-glass px-4 py-1.5 text-xs uppercase tracking-[0.24em] text-white/65">
-              Capabilities
+              Real-Time Crowd Updates
             </span>
             <h2 className="mt-6 font-display text-5xl italic leading-tight md:text-7xl">
-              Production evolved
+              Compare Waiting Times
             </h2>
             <p className="mt-5 text-base text-white/65 md:text-lg">
-              A single pipeline for generating, scheduling and relighting every frame — built
-              on the same prediction engine that powers QueuePredict.
+              Find nearby services, see how busy they are right now, and let AI-powered
+              predictions tell you when to go — QueuePredict turns waiting into a decision.
             </p>
           </motion.div>
 
