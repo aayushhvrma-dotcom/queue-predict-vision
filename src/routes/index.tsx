@@ -172,7 +172,7 @@ function Landing() {
             className="mt-12 flex flex-wrap items-center gap-x-10 gap-y-3"
           >
             <span className="text-xs uppercase tracking-[0.22em] text-white/40">
-              Trusted by
+              Supported locations
             </span>
             {PARTNERS.map((partner) => (
               <span
