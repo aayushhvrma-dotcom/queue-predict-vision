@@ -13,7 +13,7 @@ const CAPABILITIES_VIDEO =
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "QueuePredict — Venture Past Our Sky Across the Universe" },
+      { title: "QueuePredict — Know Before You Wait" },
       {
         name: "description",
         content:
@@ -32,29 +32,36 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-const NAV_LINKS = ["Home", "Voyages", "Worlds", "Innovation", "Plan Launch"];
-const PARTNERS = ["Aeon", "Vela", "Apex", "Orbit", "Zeno"];
+const NAV_LINKS = [
+  "Find Nearby Services",
+  "Compare Waiting Times",
+  "Real-Time Crowd Updates",
+  "AI-Powered Predictions",
+  "Report Current Crowd",
+];
+const PARTNERS = ["Banks", "Hospitals", "Government Offices", "Retail Stores"];
 
 const CAPABILITIES = [
   {
     icon: Sparkles,
-    title: "AI Scenery",
-    tag: "Generative",
-    body: "Compose entire environments from a single prompt, rendered with physically accurate depth and atmosphere.",
+    title: "LIVE CROWD",
+    tag: "Real-time",
+    body: "See current crowd levels reported by users at nearby locations.",
   },
   {
     icon: Layers,
-    title: "Batch Production",
-    tag: "Throughput",
-    body: "Queue thousands of shots at once and let the pipeline schedule, render and assemble them without supervision.",
+    title: "AI WAIT PREDICTION",
+    tag: "Predictive",
+    body: "Get an estimated waiting time using real-time reports and historical patterns.",
   },
   {
     icon: Sun,
-    title: "Smart Lighting",
-    tag: "Realtime",
-    body: "Relight any frame after capture with volumetric control over direction, temperature and falloff.",
+    title: "SMART CHOICE",
+    tag: "Decision",
+    body: "Compare nearby locations by crowd, distance, and predicted waiting time.",
   },
 ];
+
 
 function Landing() {
   return (
@@ -85,7 +92,7 @@ function Landing() {
             to="/app"
             className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition-transform hover:scale-[1.03]"
           >
-            Claim a Spot
+            Explore Live Queues
           </Link>
         </nav>
 
@@ -96,11 +103,11 @@ function Landing() {
             transition={{ duration: 0.8 }}
             className="mb-6 w-fit rounded-full liquid-glass px-4 py-1.5 text-xs uppercase tracking-[0.24em] text-white/70"
           >
-            Interstellar Programme 2026
+            Stop guessing. Start knowing.
           </motion.p>
 
           <h1 className="max-w-4xl font-display text-5xl italic leading-[1.02] sm:text-6xl md:text-7xl lg:text-8xl">
-            <BlurText text="Venture Past Our Sky Across the Universe" />
+            <BlurText text="Know Before You Wait." />
           </h1>
 
           <motion.p
@@ -109,8 +116,8 @@ function Landing() {
             transition={{ duration: 0.9, delay: 0.5 }}
             className="mt-8 max-w-xl text-base leading-relaxed text-white/70 md:text-lg"
           >
-            Discover the universe in ways once unimaginable — and, closer to home, discover
-            exactly how long you'll be waiting in line before you ever leave the house.
+            QueuePredict helps you check crowd levels, predict waiting times, and choose the
+            best time and place to visit.
           </motion.p>
 
           <motion.div
@@ -123,14 +130,14 @@ function Landing() {
               to="/app"
               className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 text-sm font-semibold text-black transition-transform hover:scale-[1.03]"
             >
-              Start Your Voyage
+              Explore Live Queues
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <a
               href="#capabilities"
               className="inline-flex items-center gap-2 rounded-full liquid-glass liquid-glass-strong px-7 py-4 text-sm font-medium text-white/85"
             >
-              See capabilities
+              Report a Queue
             </a>
           </motion.div>
 
@@ -141,8 +148,10 @@ function Landing() {
             className="mt-14 flex flex-wrap gap-4"
           >
             {[
-              { value: "34.5 Min", label: "Average wait avoided per trip" },
-              { value: "2.8B+", label: "Queue signals processed to date" },
+              { value: "LESS WAITING", label: "Skip the busiest hours" },
+              { value: "BETTER PLANNING", label: "Pick the right time to go" },
+              { value: "REAL-TIME INFORMATION", label: "Live crowd updates from users" },
+              { value: "SMARTER DECISIONS", label: "Choose the fastest nearby option" },
             ].map((stat) => (
               <div
                 key={stat.value}
@@ -163,7 +172,7 @@ function Landing() {
             className="mt-12 flex flex-wrap items-center gap-x-10 gap-y-3"
           >
             <span className="text-xs uppercase tracking-[0.22em] text-white/40">
-              Trusted by
+              Supported locations
             </span>
             {PARTNERS.map((partner) => (
               <span
@@ -197,14 +206,14 @@ function Landing() {
             className="max-w-2xl"
           >
             <span className="rounded-full liquid-glass px-4 py-1.5 text-xs uppercase tracking-[0.24em] text-white/65">
-              Capabilities
+              Real-Time Crowd Updates
             </span>
             <h2 className="mt-6 font-display text-5xl italic leading-tight md:text-7xl">
-              Production evolved
+              Compare Waiting Times
             </h2>
             <p className="mt-5 text-base text-white/65 md:text-lg">
-              A single pipeline for generating, scheduling and relighting every frame — built
-              on the same prediction engine that powers QueuePredict.
+              Find nearby services, see how busy they are right now, and let AI-powered
+              predictions tell you when to go — QueuePredict turns waiting into a decision.
             </p>
           </motion.div>
 
@@ -241,7 +250,7 @@ function Landing() {
               to="/app"
               className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 text-sm font-semibold text-black transition-transform hover:scale-[1.03]"
             >
-              Open QueuePredict
+              QueuePredict — Turn waiting into a decision.
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </motion.div>
