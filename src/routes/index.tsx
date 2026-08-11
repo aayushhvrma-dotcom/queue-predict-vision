@@ -103,11 +103,11 @@ function Landing() {
             transition={{ duration: 0.8 }}
             className="mb-6 w-fit rounded-full liquid-glass px-4 py-1.5 text-xs uppercase tracking-[0.24em] text-white/70"
           >
-            Interstellar Programme 2026
+            Stop guessing. Start knowing.
           </motion.p>
 
           <h1 className="max-w-4xl font-display text-5xl italic leading-[1.02] sm:text-6xl md:text-7xl lg:text-8xl">
-            <BlurText text="Venture Past Our Sky Across the Universe" />
+            <BlurText text="Know Before You Wait." />
           </h1>
 
           <motion.p
@@ -116,8 +116,8 @@ function Landing() {
             transition={{ duration: 0.9, delay: 0.5 }}
             className="mt-8 max-w-xl text-base leading-relaxed text-white/70 md:text-lg"
           >
-            Discover the universe in ways once unimaginable — and, closer to home, discover
-            exactly how long you'll be waiting in line before you ever leave the house.
+            QueuePredict helps you check crowd levels, predict waiting times, and choose the
+            best time and place to visit.
           </motion.p>
 
           <motion.div
@@ -130,14 +130,14 @@ function Landing() {
               to="/app"
               className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 text-sm font-semibold text-black transition-transform hover:scale-[1.03]"
             >
-              Start Your Voyage
+              Explore Live Queues
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <a
               href="#capabilities"
               className="inline-flex items-center gap-2 rounded-full liquid-glass liquid-glass-strong px-7 py-4 text-sm font-medium text-white/85"
             >
-              See capabilities
+              Report a Queue
             </a>
           </motion.div>
 
