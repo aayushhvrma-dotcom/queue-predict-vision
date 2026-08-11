@@ -10,8 +10,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { levelMeta, type CrowdLevel } from "@/lib/queue";
 
 export const Route = createFileRoute("/app/profile")({
+  head: () => ({
+    meta: [
+      { title: "Your Profile — QueuePredict" },
+      {
+        name: "description",
+        content:
+          "Manage your QueuePredict display name and review the crowd reports you have submitted.",
+      },
+      { property: "og:title", content: "Your Profile — QueuePredict" },
+      {
+        property: "og:description",
+        content: "Manage your account and review your queue reports on QueuePredict.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "https://queue-predict-vision.lovable.app/app/profile" }],
+  }),
   component: ProfilePage,
 });
+
 
 function ProfilePage() {
   const { user, loading } = useAuth();
