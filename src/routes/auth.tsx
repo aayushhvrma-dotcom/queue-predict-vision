@@ -144,6 +144,8 @@ function AuthPage() {
           <form onSubmit={handleSubmit} className="mt-6 space-y-3">
             {mode === "signup" && (
               <input
+                id="qp-auth-name"
+                aria-label="Full name"
                 type="text"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
@@ -153,6 +155,8 @@ function AuthPage() {
               />
             )}
             <input
+              id="qp-auth-email"
+              aria-label="Email address"
               type="email"
               required
               value={email}
@@ -162,6 +166,8 @@ function AuthPage() {
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-qp-text outline-none placeholder:text-qp-muted focus:border-qp-primary-soft"
             />
             <input
+              id="qp-auth-password"
+              aria-label="Password"
               type="password"
               required
               minLength={6}

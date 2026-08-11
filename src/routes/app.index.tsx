@@ -310,6 +310,8 @@ function MapPage() {
           <form onSubmit={handleSearch} className="qp-card flex items-center gap-2 rounded-full px-4 py-2.5">
             <Search className="h-4 w-4 shrink-0 text-qp-muted" />
             <input
+              id="qp-place-search"
+              aria-label="Search a place or an area"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search a place or an area…"

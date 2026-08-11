@@ -139,11 +139,12 @@ function ProfilePage() {
             </div>
           </div>
 
-          <label className="mt-6 block text-[11px] uppercase tracking-wider text-qp-muted">
+          <label htmlFor="qp-display-name" className="mt-6 block text-[11px] uppercase tracking-wider text-qp-muted">
             Display name
           </label>
           <div className="mt-2 flex gap-2">
             <input
+              id="qp-display-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
               className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-qp-text outline-none focus:border-qp-primary-soft"
