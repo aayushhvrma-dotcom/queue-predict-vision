@@ -92,7 +92,7 @@ function Landing() {
             to="/app"
             className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition-transform hover:scale-[1.03]"
           >
-            Claim a Spot
+            Explore Live Queues
           </Link>
         </nav>
 
