@@ -13,7 +13,7 @@ const CAPABILITIES_VIDEO =
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "QueuePredict — Venture Past Our Sky Across the Universe" },
+      { title: "QueuePredict — Know Before You Wait" },
       {
         name: "description",
         content:
