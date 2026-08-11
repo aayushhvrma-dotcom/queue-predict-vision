@@ -32,29 +32,36 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-const NAV_LINKS = ["Home", "Voyages", "Worlds", "Innovation", "Plan Launch"];
-const PARTNERS = ["Aeon", "Vela", "Apex", "Orbit", "Zeno"];
+const NAV_LINKS = [
+  "Find Nearby Services",
+  "Compare Waiting Times",
+  "Real-Time Crowd Updates",
+  "AI-Powered Predictions",
+  "Report Current Crowd",
+];
+const PARTNERS = ["Banks", "Hospitals", "Government Offices", "Retail Stores"];
 
 const CAPABILITIES = [
   {
     icon: Sparkles,
-    title: "AI Scenery",
-    tag: "Generative",
-    body: "Compose entire environments from a single prompt, rendered with physically accurate depth and atmosphere.",
+    title: "LIVE CROWD",
+    tag: "Real-time",
+    body: "See current crowd levels reported by users at nearby locations.",
   },
   {
     icon: Layers,
-    title: "Batch Production",
-    tag: "Throughput",
-    body: "Queue thousands of shots at once and let the pipeline schedule, render and assemble them without supervision.",
+    title: "AI WAIT PREDICTION",
+    tag: "Predictive",
+    body: "Get an estimated waiting time using real-time reports and historical patterns.",
   },
   {
     icon: Sun,
-    title: "Smart Lighting",
-    tag: "Realtime",
-    body: "Relight any frame after capture with volumetric control over direction, temperature and falloff.",
+    title: "SMART CHOICE",
+    tag: "Decision",
+    body: "Compare nearby locations by crowd, distance, and predicted waiting time.",
   },
 ];
+
 
 function Landing() {
   return (
