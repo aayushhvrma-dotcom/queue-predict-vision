@@ -304,7 +304,10 @@ function MapPage() {
         </Suspense>
       </ClientOnly>
 
+      <h1 className="sr-only">Live queue map — nearby crowd levels and wait times</h1>
+
       {/* Floating search + filters */}
+
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[1100] p-3 md:p-4">
         <div className="pointer-events-auto mx-auto w-full max-w-xl">
           <form onSubmit={handleSearch} className="qp-card flex items-center gap-2 rounded-full px-4 py-2.5">
