@@ -26,8 +26,27 @@ const MapCanvas = lazy(() => import("@/components/app/MapCanvas"));
 const DEFAULT_CENTER: [number, number] = [51.5074, -0.1278];
 
 export const Route = createFileRoute("/app/")({
+  head: () => ({
+    meta: [
+      { title: "Live Queue Map — QueuePredict" },
+      {
+        name: "description",
+        content:
+          "Explore an interactive map of nearby banks, hospitals, offices and stores with live crowd levels and predicted wait times.",
+      },
+      { property: "og:title", content: "Live Queue Map — QueuePredict" },
+      {
+        property: "og:description",
+        content: "Live crowd levels and AI wait-time predictions for places near you.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "https://queue-predict-vision.lovable.app/app" }],
+  }),
   component: MapPage,
 });
+
 
 type PlaceRow = {
   id: string;
