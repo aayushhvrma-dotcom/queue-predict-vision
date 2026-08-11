@@ -250,7 +250,7 @@ function Landing() {
               to="/app"
               className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 text-sm font-semibold text-black transition-transform hover:scale-[1.03]"
             >
-              Open QueuePredict
+              QueuePredict — Turn waiting into a decision.
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </motion.div>
