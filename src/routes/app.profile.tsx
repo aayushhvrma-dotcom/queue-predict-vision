@@ -10,8 +10,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { levelMeta, type CrowdLevel } from "@/lib/queue";
 
 export const Route = createFileRoute("/app/profile")({
+  head: () => ({
+    meta: [
+      { title: "Your Profile — QueuePredict" },
+      {
+        name: "description",
+        content:
+          "Manage your QueuePredict display name and review the crowd reports you have submitted.",
+      },
+      { property: "og:title", content: "Your Profile — QueuePredict" },
+      {
+        property: "og:description",
+        content: "Manage your account and review your queue reports on QueuePredict.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "https://queue-predict-vision.lovable.app/app/profile" }],
+  }),
   component: ProfilePage,
 });
+
 
 function ProfilePage() {
   const { user, loading } = useAuth();
@@ -120,11 +139,12 @@ function ProfilePage() {
             </div>
           </div>
 
-          <label className="mt-6 block text-[11px] uppercase tracking-wider text-qp-muted">
+          <label htmlFor="qp-display-name" className="mt-6 block text-[11px] uppercase tracking-wider text-qp-muted">
             Display name
           </label>
           <div className="mt-2 flex gap-2">
             <input
+              id="qp-display-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
               className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-qp-text outline-none focus:border-qp-primary-soft"

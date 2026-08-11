@@ -79,14 +79,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "QueuePredict — AI-powered Crowd Forecasting" },
+      {
+        name: "description",
+        content:
+          "QueuePredict shows live crowd levels, wait times and AI forecasts for banks, hospitals, government offices and stores near you.",
+      },
+      { name: "author", content: "QueuePredict" },
+      { property: "og:title", content: "QueuePredict — AI-powered Crowd Forecasting" },
+      {
+        property: "og:description",
+        content:
+          "Check live crowd levels, predicted wait times and 4-hour queue forecasts for places near you.",
+      },
+      { property: "og:site_name", content: "QueuePredict" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+
     ],
     links: [
       {
@@ -105,8 +114,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
-
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "QueuePredict",
+          url: "https://queue-predict-vision.lovable.app",
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "QueuePredict",
+          url: "https://queue-predict-vision.lovable.app",
+        }),
+      },
+    ],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

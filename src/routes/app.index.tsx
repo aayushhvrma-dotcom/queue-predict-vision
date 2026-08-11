@@ -26,8 +26,27 @@ const MapCanvas = lazy(() => import("@/components/app/MapCanvas"));
 const DEFAULT_CENTER: [number, number] = [51.5074, -0.1278];
 
 export const Route = createFileRoute("/app/")({
+  head: () => ({
+    meta: [
+      { title: "Live Queue Map — QueuePredict" },
+      {
+        name: "description",
+        content:
+          "Explore an interactive map of nearby banks, hospitals, offices and stores with live crowd levels and predicted wait times.",
+      },
+      { property: "og:title", content: "Live Queue Map — QueuePredict" },
+      {
+        property: "og:description",
+        content: "Live crowd levels and AI wait-time predictions for places near you.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "https://queue-predict-vision.lovable.app/app" }],
+  }),
   component: MapPage,
 });
+
 
 type PlaceRow = {
   id: string;
@@ -285,12 +304,17 @@ function MapPage() {
         </Suspense>
       </ClientOnly>
 
+      <h1 className="sr-only">Live queue map — nearby crowd levels and wait times</h1>
+
       {/* Floating search + filters */}
+
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[1100] p-3 md:p-4">
         <div className="pointer-events-auto mx-auto w-full max-w-xl">
           <form onSubmit={handleSearch} className="qp-card flex items-center gap-2 rounded-full px-4 py-2.5">
             <Search className="h-4 w-4 shrink-0 text-qp-muted" />
             <input
+              id="qp-place-search"
+              aria-label="Search a place or an area"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search a place or an area…"

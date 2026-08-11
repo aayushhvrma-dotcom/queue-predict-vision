@@ -9,8 +9,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { levelMeta, summarizeReports, type CrowdLevel } from "@/lib/queue";
 
 export const Route = createFileRoute("/app/saved")({
+  head: () => ({
+    meta: [
+      { title: "Saved Places — QueuePredict" },
+      {
+        name: "description",
+        content:
+          "Your bookmarked places with their latest crowd levels and predicted waiting times in one list.",
+      },
+      { property: "og:title", content: "Saved Places — QueuePredict" },
+      {
+        property: "og:description",
+        content: "Track crowd levels and wait times for the places you visit most.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "https://queue-predict-vision.lovable.app/app/saved" }],
+  }),
   component: SavedPage,
 });
+
 
 type SavedRow = {
   id: string;
