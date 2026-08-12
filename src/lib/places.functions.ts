@@ -25,6 +25,14 @@ const OVERPASS_FILTERS: Record<string, string[]> = {
   government: ['["office"="government"]', '["amenity"="townhall"]'],
 };
 
+const CATEGORY_RADIUS: Record<string, number> = {
+  bank: 2500,
+  hospital: 3000,
+  pharmacy: 2500,
+  post_office: 3000,
+  government: 2500,
+};
+
 const CATEGORY_LABEL: Record<string, string> = {
   bank: "Bank",
   hospital: "Clinic",
@@ -161,11 +169,12 @@ async function queryOverpass(
 export const getNearbyPlaces = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => nearbySchema.parse(input))
   .handler(async ({ data }) => {
+    const effectiveRadius = CATEGORY_RADIUS[data.category] ?? data.radius;
     let rows: PlaceRow[] = [];
     let degraded = false;
 
     try {
-      rows = await queryOverpass(data.lat, data.lng, data.category, data.radius);
+      rows = await queryOverpass(data.lat, data.lng, data.category, effectiveRadius);
     } catch (error) {
       console.error("Overpass lookup failed:", error);
       degraded = true;
