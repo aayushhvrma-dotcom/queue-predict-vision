@@ -169,16 +169,27 @@ async function queryOverpass(
 export const getNearbyPlaces = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => nearbySchema.parse(input))
   .handler(async ({ data }) => {
-    const effectiveRadius = CATEGORY_RADIUS[data.category] ?? data.radius;
+    const baseRadius = CATEGORY_RADIUS[data.category] ?? data.radius;
+    // Banks, pharmacies and government offices widen their search until the
+    // nearest results are reliably found. Hospitals keep their existing logic.
+    const ladder =
+      data.category === "bank" || data.category === "pharmacy" || data.category === "government"
+        ? [baseRadius, 5000, 8000, 12000]
+        : [baseRadius];
     let rows: PlaceRow[] = [];
     let degraded = false;
 
-    try {
-      rows = await queryOverpass(data.lat, data.lng, data.category, effectiveRadius);
-    } catch (error) {
-      console.error("Overpass lookup failed:", error);
-      degraded = true;
+    for (const radius of ladder) {
+      try {
+        rows = await queryOverpass(data.lat, data.lng, data.category, radius);
+        degraded = false;
+      } catch (error) {
+        console.error("Overpass lookup failed:", error);
+        degraded = true;
+      }
+      if (rows.length >= 8) break;
     }
+
 
     if (rows.length === 0) {
       degraded = true;
