@@ -5,15 +5,24 @@ const nearbySchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
   category: z.enum(["bank", "hospital", "pharmacy", "post_office", "government"]),
-  radius: z.number().min(500).max(20000).default(4000),
+  radius: z.number().min(500).max(20000).default(3000),
 });
 
-const OVERPASS_FILTERS: Record<string, string> = {
-  bank: '["amenity"="bank"]',
-  hospital: '["amenity"~"^(hospital|clinic|doctors)$"]',
-  pharmacy: '["amenity"="pharmacy"]',
-  post_office: '["amenity"="post_office"]',
-  government: '["office"="government"]',
+/** Each category can match several OSM tag combinations so nothing nearby is skipped. */
+const OVERPASS_FILTERS: Record<string, string[]> = {
+  bank: ['["amenity"="bank"]', '["office"="financial"]', '["shop"="bank"]'],
+  hospital: [
+    '["amenity"~"^(hospital|clinic|doctors)$"]',
+    '["healthcare"~"^(hospital|clinic|doctor|centre)$"]',
+    '["building"="hospital"]',
+  ],
+  pharmacy: [
+    '["amenity"="pharmacy"]',
+    '["healthcare"="pharmacy"]',
+    '["shop"~"^(chemist|medical_supply)$"]',
+  ],
+  post_office: ['["amenity"="post_office"]', '["office"="post_office"]'],
+  government: ['["office"="government"]', '["amenity"="townhall"]'],
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
