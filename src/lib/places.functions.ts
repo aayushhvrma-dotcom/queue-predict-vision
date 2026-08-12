@@ -89,8 +89,14 @@ async function queryOverpass(
   category: string,
   radius: number,
 ): Promise<PlaceRow[]> {
-  const filter = OVERPASS_FILTERS[category] ?? OVERPASS_FILTERS["bank"]!;
-  const query = `[out:json][timeout:20];(node${filter}(around:${radius},${lat},${lng});way${filter}(around:${radius},${lat},${lng}););out center 60;`;
+  const filters = OVERPASS_FILTERS[category] ?? OVERPASS_FILTERS["bank"]!;
+  const clauses = filters
+    .map(
+      (filter) =>
+        `node${filter}(around:${radius},${lat},${lng});way${filter}(around:${radius},${lat},${lng});relation${filter}(around:${radius},${lat},${lng});`,
+    )
+    .join("");
+  const query = `[out:json][timeout:25];(${clauses});out center 120;`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
