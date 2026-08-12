@@ -132,7 +132,13 @@ async function queryOverpass(
         } satisfies PlaceRow;
       })
       .filter((row): row is PlaceRow => row !== null)
-      .slice(0, 40);
+      // keep only what is truly inside the requested radius, closest first
+      .map((row) => ({ row, d: metersBetween(lat, lng, row.latitude, row.longitude) }))
+      .filter((item) => item.d <= radius * 1.05)
+      .sort((a, b) => a.d - b.d)
+      .map((item) => item.row)
+      .filter((row, index, all) => all.findIndex((r) => r.source_id === row.source_id) === index)
+      .slice(0, 60);
   } finally {
     clearTimeout(timer);
   }
