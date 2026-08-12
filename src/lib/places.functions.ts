@@ -25,6 +25,14 @@ const OVERPASS_FILTERS: Record<string, string[]> = {
   government: ['["office"="government"]', '["amenity"="townhall"]'],
 };
 
+const CATEGORY_RADIUS: Record<string, number> = {
+  bank: 2500,
+  hospital: 3000,
+  pharmacy: 2500,
+  post_office: 3000,
+  government: 2500,
+};
+
 const CATEGORY_LABEL: Record<string, string> = {
   bank: "Bank",
   hospital: "Clinic",
