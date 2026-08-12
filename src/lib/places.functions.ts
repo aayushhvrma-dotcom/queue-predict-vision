@@ -5,15 +5,24 @@ const nearbySchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
   category: z.enum(["bank", "hospital", "pharmacy", "post_office", "government"]),
-  radius: z.number().min(500).max(20000).default(4000),
+  radius: z.number().min(500).max(20000).default(3000),
 });
 
-const OVERPASS_FILTERS: Record<string, string> = {
-  bank: '["amenity"="bank"]',
-  hospital: '["amenity"~"^(hospital|clinic|doctors)$"]',
-  pharmacy: '["amenity"="pharmacy"]',
-  post_office: '["amenity"="post_office"]',
-  government: '["office"="government"]',
+/** Each category can match several OSM tag combinations so nothing nearby is skipped. */
+const OVERPASS_FILTERS: Record<string, string[]> = {
+  bank: ['["amenity"="bank"]', '["office"="financial"]', '["shop"="bank"]'],
+  hospital: [
+    '["amenity"~"^(hospital|clinic|doctors)$"]',
+    '["healthcare"~"^(hospital|clinic|doctor|centre)$"]',
+    '["building"="hospital"]',
+  ],
+  pharmacy: [
+    '["amenity"="pharmacy"]',
+    '["healthcare"="pharmacy"]',
+    '["shop"~"^(chemist|medical_supply)$"]',
+  ],
+  post_office: ['["amenity"="post_office"]', '["office"="post_office"]'],
+  government: ['["office"="government"]', '["amenity"="townhall"]'],
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -54,6 +63,16 @@ function buildAddress(tags: Record<string, string>, lat: number, lng: number): s
   return `Near ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 }
 
+function metersBetween(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
 /** Deterministic offline fallback so the map is never empty. */
 function fallbackPlaces(lat: number, lng: number, category: string): PlaceRow[] {
   const label = CATEGORY_LABEL[category] ?? "Place";
@@ -80,8 +99,14 @@ async function queryOverpass(
   category: string,
   radius: number,
 ): Promise<PlaceRow[]> {
-  const filter = OVERPASS_FILTERS[category] ?? OVERPASS_FILTERS["bank"]!;
-  const query = `[out:json][timeout:20];(node${filter}(around:${radius},${lat},${lng});way${filter}(around:${radius},${lat},${lng}););out center 60;`;
+  const filters = OVERPASS_FILTERS[category] ?? OVERPASS_FILTERS["bank"]!;
+  const clauses = filters
+    .map(
+      (filter) =>
+        `node${filter}(around:${radius},${lat},${lng});way${filter}(around:${radius},${lat},${lng});relation${filter}(around:${radius},${lat},${lng});`,
+    )
+    .join("");
+  const query = `[out:json][timeout:25];(${clauses});out center 120;`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
@@ -117,7 +142,13 @@ async function queryOverpass(
         } satisfies PlaceRow;
       })
       .filter((row): row is PlaceRow => row !== null)
-      .slice(0, 40);
+      // keep only what is truly inside the requested radius, closest first
+      .map((row) => ({ row, d: metersBetween(lat, lng, row.latitude, row.longitude) }))
+      .filter((item) => item.d <= radius * 1.05)
+      .sort((a, b) => a.d - b.d)
+      .map((item) => item.row)
+      .filter((row, index, all) => all.findIndex((r) => r.source_id === row.source_id) === index)
+      .slice(0, 60);
   } finally {
     clearTimeout(timer);
   }

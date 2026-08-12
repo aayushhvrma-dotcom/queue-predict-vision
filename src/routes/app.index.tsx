@@ -108,7 +108,7 @@ function MapPage() {
   const placesQuery = useQuery({
     queryKey: ["places", center[0].toFixed(3), center[1].toFixed(3), category],
     queryFn: async () =>
-      nearby({ data: { lat: center[0], lng: center[1], category, radius: 4000 } }),
+      nearby({ data: { lat: center[0], lng: center[1], category, radius: 3000 } }),
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
