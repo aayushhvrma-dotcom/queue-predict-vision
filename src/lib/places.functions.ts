@@ -169,11 +169,12 @@ async function queryOverpass(
 export const getNearbyPlaces = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => nearbySchema.parse(input))
   .handler(async ({ data }) => {
+    const effectiveRadius = CATEGORY_RADIUS[data.category] ?? data.radius;
     let rows: PlaceRow[] = [];
     let degraded = false;
 
     try {
-      rows = await queryOverpass(data.lat, data.lng, data.category, data.radius);
+      rows = await queryOverpass(data.lat, data.lng, data.category, effectiveRadius);
     } catch (error) {
       console.error("Overpass lookup failed:", error);
       degraded = true;
