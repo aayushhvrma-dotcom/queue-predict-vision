@@ -26,9 +26,6 @@ export function levelMeta(level: CrowdLevel) {
 export const PLACE_CATEGORIES = [
   { value: "bank", label: "Banks" },
   { value: "hospital", label: "Hospitals" },
-  { value: "pharmacy", label: "Pharmacies" },
-  { value: "post_office", label: "Post offices" },
-  { value: "government", label: "Government" },
 ] as const;
 
 export type PlaceCategory = (typeof PLACE_CATEGORIES)[number]["value"];
