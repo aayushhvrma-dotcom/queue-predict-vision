@@ -58,12 +58,39 @@ function Recenter({ center, zoom }: { center: [number, number]; zoom?: number | 
   return null;
 }
 
+/** Reports the map's current centre + covering radius after the user pans/zooms. */
+function ViewportWatcher({
+  onViewportChange,
+}: {
+  onViewportChange: (view: { lat: number; lng: number; radius: number }) => void;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    const emit = () => {
+      const c = map.getCenter();
+      const bounds = map.getBounds();
+      // half the diagonal of the visible box => covers everything on screen
+      const radius = Math.round(bounds.getNorthEast().distanceTo(bounds.getSouthWest()) / 2);
+      onViewportChange({ lat: c.lat, lng: c.lng, radius });
+    };
+    map.on("moveend", emit);
+    map.on("zoomend", emit);
+    emit();
+    return () => {
+      map.off("moveend", emit);
+      map.off("zoomend", emit);
+    };
+  }, [map, onViewportChange]);
+  return null;
+}
+
 type MapCanvasProps = {
   center: [number, number];
   userPosition: [number, number] | null;
   places: MapPlace[];
   selectedId: string | null;
   onSelect: (place: MapPlace) => void;
+  onViewportChange?: (view: { lat: number; lng: number; radius: number }) => void;
   zoom?: number;
 };
 
@@ -73,6 +100,7 @@ export default function MapCanvas({
   places,
   selectedId,
   onSelect,
+  onViewportChange,
   zoom,
 }: MapCanvasProps) {
   const markers = useMemo(
@@ -96,12 +124,14 @@ export default function MapCanvas({
       className="h-full w-full"
       attributionControl
     >
+
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         attribution='&copy; OpenStreetMap contributors &copy; CARTO'
       />
       <Recenter center={center} zoom={zoom} />
-      {userPosition && (
+      {onViewportChange && <ViewportWatcher onViewportChange={onViewportChange} />}
+
         <>
           <Circle
             center={userPosition}
