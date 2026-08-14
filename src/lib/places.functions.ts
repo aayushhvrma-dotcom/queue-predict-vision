@@ -114,7 +114,7 @@ async function queryOverpass(
         `node${filter}(around:${radius},${lat},${lng});way${filter}(around:${radius},${lat},${lng});relation${filter}(around:${radius},${lat},${lng});`,
     )
     .join("");
-  const query = `[out:json][timeout:25];(${clauses});out center 400;`;
+  const query = `[out:json][timeout:25];(${clauses});out center 120;`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
@@ -155,9 +155,8 @@ async function queryOverpass(
       .filter((item) => item.d <= radius * 1.05)
       .sort((a, b) => a.d - b.d)
       .map((item) => item.row)
-    .filter((row, index, all) => all.findIndex((r) => r.source_id === row.source_id) === index)
-    .slice(0, 150);
-
+      .filter((row, index, all) => all.findIndex((r) => r.source_id === row.source_id) === index)
+      .slice(0, 60);
   } finally {
     clearTimeout(timer);
   }
@@ -170,9 +169,7 @@ async function queryOverpass(
 export const getNearbyPlaces = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => nearbySchema.parse(input))
   .handler(async ({ data }) => {
-    // Honour the viewport radius the client asks for (map pan/zoom), but never
-    // go below the category minimum so nearby results are not missed.
-    const baseRadius = Math.max(data.radius, CATEGORY_RADIUS[data.category] ?? 2500);
+    const baseRadius = CATEGORY_RADIUS[data.category] ?? data.radius;
     const expands =
       data.category === "bank" || data.category === "pharmacy" || data.category === "government";
     // Hard caps: never widen past MAX_RADIUS_M and never make more than
@@ -180,11 +177,9 @@ export const getNearbyPlaces = createServerFn({ method: "POST" })
     const MAX_RADIUS_M = 12000;
     const MAX_ATTEMPTS = 4;
     const ENOUGH_RESULTS = 8;
-    const ladder = (expands ? [baseRadius, baseRadius * 2, baseRadius * 3, 12000] : [baseRadius])
-      .map((radius) => Math.round(radius))
-      .filter((radius, index, all) => radius <= MAX_RADIUS_M && all.indexOf(radius) === index)
+    const ladder = (expands ? [baseRadius, 5000, 8000, 12000] : [baseRadius])
+      .filter((radius) => radius <= MAX_RADIUS_M)
       .slice(0, MAX_ATTEMPTS);
-
 
     let rows: PlaceRow[] = [];
     let degraded = false;

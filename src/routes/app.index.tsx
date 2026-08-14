@@ -105,43 +105,16 @@ function MapPage() {
     locate();
   }, [locate]);
 
-  // Fetch area follows the map: updated on pan/zoom, falls back to the current centre.
-  const [view, setView] = useState<{ lat: number; lng: number; radius: number }>({
-    lat: center[0],
-    lng: center[1],
-    radius: 3000,
-  });
-
-  const handleViewportChange = useCallback((next: { lat: number; lng: number; radius: number }) => {
-    setView((prev) => {
-      const moved = haversineKm({ lat: prev.lat, lng: prev.lng }, { lat: next.lat, lng: next.lng });
-      const radiusChanged = Math.abs(next.radius - prev.radius) / prev.radius > 0.25;
-      // ignore micro-movements so we don't hammer the API while dragging
-      if (moved < 0.4 && !radiusChanged) return prev;
-      return next;
-    });
-  }, []);
-
-  const fetchRadius = Math.min(12000, Math.max(2000, Math.round(view.radius)));
-
   const placesQuery = useQuery({
-    queryKey: [
-      "places",
-      view.lat.toFixed(3),
-      view.lng.toFixed(3),
-      Math.round(fetchRadius / 500),
-      category,
-    ],
+    queryKey: ["places", center[0].toFixed(3), center[1].toFixed(3), category],
     queryFn: async () =>
-      nearby({ data: { lat: view.lat, lng: view.lng, category, radius: fetchRadius } }),
+      nearby({ data: { lat: center[0], lng: center[1], category, radius: 3000 } }),
     staleTime: 5 * 60 * 1000,
-    placeholderData: (previous) => previous,
     retry: 1,
   });
 
   const placeRows = (placesQuery.data?.places ?? []) as PlaceRow[];
   const placeIds = useMemo(() => placeRows.map((place) => place.id), [placeRows]);
-
 
   const reportsQuery = useQuery({
     queryKey: ["reports", placeIds],
@@ -184,23 +157,13 @@ function MapPage() {
       grouped.set(report.place_id, list);
     }
     const term = query.trim().toLowerCase();
-    const origin = userPosition
-      ? { lat: userPosition[0], lng: userPosition[1] }
-      : { lat: view.lat, lng: view.lng };
     return placeRows
       .filter((place) => (term ? place.name.toLowerCase().includes(term) : true))
       .map((place) => ({
         ...place,
         summary: summarizeReports(place.id, grouped.get(place.id) ?? []),
-      }))
-      // nearest first, so the closest branch is never dropped off the list
-      .sort(
-        (a, b) =>
-          haversineKm(origin, { lat: a.latitude, lng: a.longitude }) -
-          haversineKm(origin, { lat: b.latitude, lng: b.longitude }),
-      );
-  }, [placeRows, reportsQuery.data, query, userPosition, view.lat, view.lng]);
-
+      }));
+  }, [placeRows, reportsQuery.data, query]);
 
   const selected = places.find((place) => place.id === selectedId) ?? null;
   const distanceKm =
@@ -337,9 +300,7 @@ function MapPage() {
             places={places}
             selectedId={selectedId}
             onSelect={(place) => setSelectedId(place.id)}
-            onViewportChange={handleViewportChange}
           />
-
         </Suspense>
       </ClientOnly>
 
