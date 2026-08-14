@@ -170,7 +170,9 @@ async function queryOverpass(
 export const getNearbyPlaces = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => nearbySchema.parse(input))
   .handler(async ({ data }) => {
-    const baseRadius = CATEGORY_RADIUS[data.category] ?? data.radius;
+    // Honour the viewport radius the client asks for (map pan/zoom), but never
+    // go below the category minimum so nearby results are not missed.
+    const baseRadius = Math.max(data.radius, CATEGORY_RADIUS[data.category] ?? 2500);
     const expands =
       data.category === "bank" || data.category === "pharmacy" || data.category === "government";
     // Hard caps: never widen past MAX_RADIUS_M and never make more than
@@ -178,9 +180,11 @@ export const getNearbyPlaces = createServerFn({ method: "POST" })
     const MAX_RADIUS_M = 12000;
     const MAX_ATTEMPTS = 4;
     const ENOUGH_RESULTS = 8;
-    const ladder = (expands ? [baseRadius, 5000, 8000, 12000] : [baseRadius])
-      .filter((radius) => radius <= MAX_RADIUS_M)
+    const ladder = (expands ? [baseRadius, baseRadius * 2, baseRadius * 3, 12000] : [baseRadius])
+      .map((radius) => Math.round(radius))
+      .filter((radius, index, all) => radius <= MAX_RADIUS_M && all.indexOf(radius) === index)
       .slice(0, MAX_ATTEMPTS);
+
 
     let rows: PlaceRow[] = [];
     let degraded = false;
