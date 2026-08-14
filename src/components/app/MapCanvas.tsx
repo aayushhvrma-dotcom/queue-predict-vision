@@ -131,8 +131,9 @@ export default function MapCanvas({
       />
       <Recenter center={center} zoom={zoom} />
       {onViewportChange && <ViewportWatcher onViewportChange={onViewportChange} />}
-
+      {userPosition && (
         <>
+
           <Circle
             center={userPosition}
             radius={220}
