@@ -327,7 +327,9 @@ function MapPage() {
             places={places}
             selectedId={selectedId}
             onSelect={(place) => setSelectedId(place.id)}
+            onViewportChange={handleViewportChange}
           />
+
         </Suspense>
       </ClientOnly>
 

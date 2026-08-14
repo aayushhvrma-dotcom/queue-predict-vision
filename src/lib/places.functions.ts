@@ -114,7 +114,7 @@ async function queryOverpass(
         `node${filter}(around:${radius},${lat},${lng});way${filter}(around:${radius},${lat},${lng});relation${filter}(around:${radius},${lat},${lng});`,
     )
     .join("");
-  const query = `[out:json][timeout:25];(${clauses});out center 120;`;
+  const query = `[out:json][timeout:25];(${clauses});out center 400;`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
@@ -155,8 +155,9 @@ async function queryOverpass(
       .filter((item) => item.d <= radius * 1.05)
       .sort((a, b) => a.d - b.d)
       .map((item) => item.row)
-      .filter((row, index, all) => all.findIndex((r) => r.source_id === row.source_id) === index)
-      .slice(0, 60);
+    .filter((row, index, all) => all.findIndex((r) => r.source_id === row.source_id) === index)
+    .slice(0, 150);
+
   } finally {
     clearTimeout(timer);
   }
