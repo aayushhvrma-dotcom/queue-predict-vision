@@ -184,13 +184,23 @@ function MapPage() {
       grouped.set(report.place_id, list);
     }
     const term = query.trim().toLowerCase();
+    const origin = userPosition
+      ? { lat: userPosition[0], lng: userPosition[1] }
+      : { lat: view.lat, lng: view.lng };
     return placeRows
       .filter((place) => (term ? place.name.toLowerCase().includes(term) : true))
       .map((place) => ({
         ...place,
         summary: summarizeReports(place.id, grouped.get(place.id) ?? []),
-      }));
-  }, [placeRows, reportsQuery.data, query]);
+      }))
+      // nearest first, so the closest branch is never dropped off the list
+      .sort(
+        (a, b) =>
+          haversineKm(origin, { lat: a.latitude, lng: a.longitude }) -
+          haversineKm(origin, { lat: b.latitude, lng: b.longitude }),
+      );
+  }, [placeRows, reportsQuery.data, query, userPosition, view.lat, view.lng]);
+
 
   const selected = places.find((place) => place.id === selectedId) ?? null;
   const distanceKm =
