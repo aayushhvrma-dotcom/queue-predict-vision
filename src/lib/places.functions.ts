@@ -1,14 +1,30 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+/**
+ * Full Overpass API integration (no key-restricted "nearby" endpoint, no result
+ * cap). The client sends the map's exact bounding box on every pan/zoom and we
+ * fetch EVERY matching location inside it, paginating by splitting the box when
+ * a tile returns a saturated response.
+ */
+
+const bboxSchema = z.object({
+  south: z.number().min(-90).max(90),
+  west: z.number().min(-180).max(180),
+  north: z.number().min(-90).max(90),
+  east: z.number().min(-180).max(180),
+});
+
 const nearbySchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
-  category: z.enum(["bank", "hospital", "pharmacy", "post_office", "government"]),
+  // Strictly hardcoded types: banks and hospitals only.
+  category: z.enum(["bank", "hospital"]),
   radius: z.number().min(500).max(20000).default(3000),
+  bbox: bboxSchema.optional(),
 });
 
-/** Each category can match several OSM tag combinations so nothing nearby is skipped. */
+/** Each category can match several OSM tag combinations so nothing is skipped. */
 const OVERPASS_FILTERS: Record<string, string[]> = {
   bank: ['["amenity"="bank"]', '["office"="financial"]', '["shop"="bank"]'],
   hospital: [
@@ -16,30 +32,24 @@ const OVERPASS_FILTERS: Record<string, string[]> = {
     '["healthcare"~"^(hospital|clinic|doctor|centre)$"]',
     '["building"="hospital"]',
   ],
-  pharmacy: [
-    '["amenity"="pharmacy"]',
-    '["healthcare"="pharmacy"]',
-    '["shop"~"^(chemist|medical_supply)$"]',
-  ],
-  post_office: ['["amenity"="post_office"]', '["office"="post_office"]'],
-  government: ['["office"="government"]', '["amenity"="townhall"]'],
-};
-
-const CATEGORY_RADIUS: Record<string, number> = {
-  bank: 2500,
-  hospital: 3000,
-  pharmacy: 2500,
-  post_office: 3000,
-  government: 2500,
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
   bank: "Bank",
   hospital: "Clinic",
-  pharmacy: "Pharmacy",
-  post_office: "Post Office",
-  government: "Government Office",
 };
+
+/** Public Overpass mirrors — tried in order so one busy server never blocks India traffic. */
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+];
+
+/** Region bias: results outside India are dropped when the viewport is Indian. */
+const IN_BOUNDS = { south: 6.0, west: 67.0, north: 37.6, east: 97.5 };
+
+type BBox = z.infer<typeof bboxSchema>;
 
 type OverpassElement = {
   type: string;
@@ -81,6 +91,29 @@ function metersBetween(lat1: number, lng1: number, lat2: number, lng2: number): 
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+function inIndia(bbox: BBox): boolean {
+  const lat = (bbox.south + bbox.north) / 2;
+  const lng = (bbox.west + bbox.east) / 2;
+  return lat >= IN_BOUNDS.south && lat <= IN_BOUNDS.north && lng >= IN_BOUNDS.west && lng <= IN_BOUNDS.east;
+}
+
+function bboxFromRadius(lat: number, lng: number, radius: number): BBox {
+  const dLat = radius / 111320;
+  const dLng = radius / (111320 * Math.max(0.2, Math.cos((lat * Math.PI) / 180)));
+  return { south: lat - dLat, west: lng - dLng, north: lat + dLat, east: lng + dLng };
+}
+
+function quadrants(bbox: BBox): BBox[] {
+  const midLat = (bbox.south + bbox.north) / 2;
+  const midLng = (bbox.west + bbox.east) / 2;
+  return [
+    { south: bbox.south, west: bbox.west, north: midLat, east: midLng },
+    { south: bbox.south, west: midLng, north: midLat, east: bbox.east },
+    { south: midLat, west: bbox.west, north: bbox.north, east: midLng },
+    { south: midLat, west: midLng, north: bbox.north, east: bbox.east },
+  ];
+}
+
 /** Deterministic offline fallback so the map is never empty. */
 function fallbackPlaces(lat: number, lng: number, category: string): PlaceRow[] {
   const label = CATEGORY_LABEL[category] ?? "Place";
@@ -101,130 +134,126 @@ function fallbackPlaces(lat: number, lng: number, category: string): PlaceRow[] 
   });
 }
 
-async function queryOverpass(
-  lat: number,
-  lng: number,
-  category: string,
-  radius: number,
-): Promise<PlaceRow[]> {
+/** Raw Overpass call for one bounding box; throws when every mirror fails. */
+async function fetchTile(bbox: BBox, category: string): Promise<PlaceRow[]> {
   const filters = OVERPASS_FILTERS[category] ?? OVERPASS_FILTERS["bank"]!;
+  const box = `${bbox.south},${bbox.west},${bbox.north},${bbox.east}`;
   const clauses = filters
-    .map(
-      (filter) =>
-        `node${filter}(around:${radius},${lat},${lng});way${filter}(around:${radius},${lat},${lng});relation${filter}(around:${radius},${lat},${lng});`,
-    )
+    .map((filter) => `node${filter}(${box});way${filter}(${box});relation${filter}(${box});`)
     .join("");
-  const query = `[out:json][timeout:25];(${clauses});out center 400;`;
+  // No "out" limit — every element inside the box is returned.
+  const query = `[out:json][timeout:25];(${clauses});out center;`;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
+  let lastError: unknown = null;
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept-Encoding": "gzip, deflate",
+          "User-Agent": "QueuePredict/1.0 (queue prediction app)",
+        },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`Overpass ${endpoint} responded ${response.status}`);
+      const json = (await response.json()) as { elements?: OverpassElement[] };
 
-  try {
-    const response = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept-Encoding": "gzip, deflate",
-        "User-Agent": "QueuePredict/1.0 (queue prediction app)",
-      },
-      body: `data=${encodeURIComponent(query)}`,
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`Overpass responded ${response.status}`);
-    const json = (await response.json()) as { elements?: OverpassElement[] };
-
-    return (json.elements ?? [])
-      .map((element) => {
-        const plat = element.lat ?? element.center?.lat;
-        const plng = element.lon ?? element.center?.lon;
-        const tags = element.tags ?? {};
-        if (plat == null || plng == null) return null;
-        const name = tags["name"] ?? tags["operator"] ?? CATEGORY_LABEL[category] ?? "Place";
-        return {
-          name,
-          address: buildAddress(tags, plat, plng),
-          latitude: plat,
-          longitude: plng,
-          category,
-          source_id: `osm:${element.type}/${element.id}`,
-        } satisfies PlaceRow;
-      })
-      .filter((row): row is PlaceRow => row !== null)
-      // keep only what is truly inside the requested radius, closest first
-      .map((row) => ({ row, d: metersBetween(lat, lng, row.latitude, row.longitude) }))
-      .filter((item) => item.d <= radius * 1.05)
-      .sort((a, b) => a.d - b.d)
-      .map((item) => item.row)
-    .filter((row, index, all) => all.findIndex((r) => r.source_id === row.source_id) === index)
-    .slice(0, 150);
-
-  } finally {
-    clearTimeout(timer);
+      return (json.elements ?? [])
+        .map((element) => {
+          const plat = element.lat ?? element.center?.lat;
+          const plng = element.lon ?? element.center?.lon;
+          const tags = element.tags ?? {};
+          if (plat == null || plng == null) return null;
+          const name = tags["name"] ?? tags["operator"] ?? CATEGORY_LABEL[category] ?? "Place";
+          return {
+            name,
+            address: buildAddress(tags, plat, plng),
+            latitude: plat,
+            longitude: plng,
+            category,
+            source_id: `osm:${element.type}/${element.id}`,
+          } satisfies PlaceRow;
+        })
+        .filter((row): row is PlaceRow => row !== null);
+    } catch (error) {
+      lastError = error;
+      console.error(`[places] mirror failed ${endpoint}:`, error);
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  throw lastError ?? new Error("All Overpass mirrors failed");
+}
+
+const SATURATED = 400; // tile looks truncated => split and page through it
+const MAX_TILES = 24;
+
+/** Fetches the whole bounding box, splitting into quadrants until nothing is cut off. */
+async function fetchBBox(bbox: BBox, category: string) {
+  const collected = new Map<string, PlaceRow>();
+  const queue: BBox[] = [bbox];
+  let tiles = 0;
+  let failures = 0;
+
+  while (queue.length > 0 && tiles < MAX_TILES) {
+    const current = queue.shift()!;
+    tiles += 1;
+    try {
+      const rows = await fetchTile(current, category);
+      for (const row of rows) collected.set(row.source_id, row);
+      console.info(`[places] ${category} tile ${tiles} -> ${rows.length} results`);
+      if (rows.length >= SATURATED && tiles + queue.length + 4 <= MAX_TILES) {
+        queue.push(...quadrants(current));
+      }
+    } catch {
+      failures += 1;
+    }
+  }
+
+  return { rows: [...collected.values()], tiles, failures };
 }
 
 /**
- * Finds real nearby places from OpenStreetMap, stores them in the database and
- * returns the stored rows (so reports can reference stable ids).
+ * Finds real nearby places from OpenStreetMap for the exact visible map area,
+ * stores them in the database and returns the stored rows.
  */
 export const getNearbyPlaces = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => nearbySchema.parse(input))
   .handler(async ({ data }) => {
-    // Honour the viewport radius the client asks for (map pan/zoom), but never
-    // go below the category minimum so nearby results are not missed.
-    const baseRadius = Math.max(data.radius, CATEGORY_RADIUS[data.category] ?? 2500);
-    const expands =
-      data.category === "bank" || data.category === "pharmacy" || data.category === "government";
-    // Hard caps: never widen past MAX_RADIUS_M and never make more than
-    // MAX_ATTEMPTS Overpass calls, so a sparse area cannot cause over-fetching.
-    const MAX_RADIUS_M = 12000;
-    const MAX_ATTEMPTS = 4;
-    const ENOUGH_RESULTS = 8;
-    const ladder = (expands ? [baseRadius, baseRadius * 2, baseRadius * 3, 12000] : [baseRadius])
-      .map((radius) => Math.round(radius))
-      .filter((radius, index, all) => radius <= MAX_RADIUS_M && all.indexOf(radius) === index)
-      .slice(0, MAX_ATTEMPTS);
-
-
-    let rows: PlaceRow[] = [];
-    let degraded = false;
+    const bbox = data.bbox ?? bboxFromRadius(data.lat, data.lng, data.radius);
     const startedAt = Date.now();
-    let attempts = 0;
 
-    for (const radius of ladder) {
-      attempts += 1;
-      const attemptStart = Date.now();
-      try {
-        rows = await queryOverpass(data.lat, data.lng, data.category, radius);
-        degraded = false;
-        console.info(
-          `[places] ${data.category} attempt ${attempts}/${ladder.length} radius=${radius}m results=${rows.length} in ${Date.now() - attemptStart}ms`,
-        );
-      } catch (error) {
-        degraded = true;
-        console.error(
-          `[places] ${data.category} attempt ${attempts}/${ladder.length} radius=${radius}m failed after ${Date.now() - attemptStart}ms:`,
-          error,
-        );
-      }
-      if (rows.length >= ENOUGH_RESULTS) {
-        console.info(
-          `[places] ${data.category} stopped early at radius=${radius}m with ${rows.length} results`,
-        );
-        break;
-      }
-    }
+    const { rows: fetched, tiles, failures } = await fetchBBox(bbox, data.category);
+
+    const biasToIndia = inIndia(bbox);
+    let rows = fetched
+      .filter((row) =>
+        biasToIndia
+          ? row.latitude >= IN_BOUNDS.south &&
+            row.latitude <= IN_BOUNDS.north &&
+            row.longitude >= IN_BOUNDS.west &&
+            row.longitude <= IN_BOUNDS.east
+          : true,
+      )
+      .map((row) => ({ row, d: metersBetween(data.lat, data.lng, row.latitude, row.longitude) }))
+      .sort((a, b) => a.d - b.d)
+      .map((item) => item.row);
+
+    let degraded = failures > 0 && rows.length === 0;
 
     if (rows.length === 0) {
       degraded = true;
       rows = fallbackPlaces(data.lat, data.lng, data.category);
-      console.warn(`[places] ${data.category} using demo fallback after ${attempts} attempt(s)`);
+      console.warn(`[places] ${data.category} using demo fallback after ${tiles} tile(s)`);
     }
 
     console.info(
-      `[places] ${data.category} resolved ${rows.length} places in ${attempts} attempt(s), ${Date.now() - startedAt}ms, degraded=${degraded}`,
+      `[places] ${data.category} resolved ${rows.length} places from ${tiles} tile(s) in ${Date.now() - startedAt}ms, degraded=${degraded}`,
     );
-
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -251,11 +280,11 @@ export const getNearbyPlaces = createServerFn({ method: "POST" })
 
 const geocodeSchema = z.object({ query: z.string().min(2).max(120) });
 
-/** Free-text location search (city, street, landmark) via OpenStreetMap. */
+/** Free-text location search (city, street, landmark) via OpenStreetMap, biased to India. */
 export const geocodeLocation = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => geocodeSchema.parse(input))
   .handler(async ({ data }) => {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(data.query)}`;
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=in&q=${encodeURIComponent(data.query)}`;
     const response = await fetch(url, {
       headers: { "User-Agent": "QueuePredict/1.0 (queue prediction app)" },
     });
