@@ -101,7 +101,7 @@ function MapPage() {
         );
         setLocating(false);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   }, []);
 
@@ -123,15 +123,15 @@ function MapPage() {
         );
       },
       () => {},
-      { enableHighAccuracy: true, maximumAge: 30000, timeout: 20000 },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 },
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   const placesQuery = useQuery({
-    queryKey: ["places", fetchCenter[0].toFixed(2), fetchCenter[1].toFixed(2), category],
+    queryKey: ["places", fetchCenter[0].toFixed(3), fetchCenter[1].toFixed(3), category],
     queryFn: async () =>
-      nearby({ data: { lat: fetchCenter[0], lng: fetchCenter[1], category, radius: 3000 } }),
+      nearby({ data: { lat: fetchCenter[0], lng: fetchCenter[1], category, radius: 5000 } }),
     staleTime: 5 * 60 * 1000,
     placeholderData: (previous) => previous,
     retry: 1,

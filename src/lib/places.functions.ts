@@ -5,32 +5,33 @@ const nearbySchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
   category: z.enum(["bank", "hospital", "pharmacy", "post_office", "government"]),
-  radius: z.number().min(500).max(20000).default(3000),
+  radius: z.number().min(500).max(20000).default(5000),
 });
 
 /** Each category can match several OSM tag combinations so nothing nearby is skipped. */
 const OVERPASS_FILTERS: Record<string, string[]> = {
-  bank: ['["amenity"="bank"]', '["office"="financial"]', '["shop"="bank"]'],
+  bank: ['["amenity"~"bank|bureau_de_change|atm"]', '["office"~"financial|insurance"]', '["shop"~"bank|money_lender"]'],
   hospital: [
-    '["amenity"~"^(hospital|clinic|doctors)$"]',
-    '["healthcare"~"^(hospital|clinic|doctor|centre)$"]',
-    '["building"="hospital"]',
+    '["amenity"~"hospital|clinic|doctors|nursing_home"]',
+    '["healthcare"]',
+    '["building"~"hospital"]',
   ],
   pharmacy: [
-    '["amenity"="pharmacy"]',
-    '["healthcare"="pharmacy"]',
-    '["shop"~"^(chemist|medical_supply)$"]',
+    '["amenity"~"pharmacy"]',
+    '["healthcare"~"pharmacy"]',
+    '["shop"~"chemist|medical_supply|pharmacy"]',
   ],
-  post_office: ['["amenity"="post_office"]', '["office"="post_office"]'],
-  government: ['["office"="government"]', '["amenity"="townhall"]'],
+  post_office: ['["amenity"~"post_office|post_depot"]', '["office"~"post_office"]', '["shop"~"post_office"]'],
+  government: ['["office"~"government|administrative|diplomatic"]', '["amenity"~"townhall|courthouse|public_building"]', '["building"~"public|civic|government"]'],
 };
 
+/** Live-location searches start wide (5 km) so sparse areas still return places. */
 const CATEGORY_RADIUS: Record<string, number> = {
-  bank: 2500,
-  hospital: 3000,
-  pharmacy: 2500,
-  post_office: 3000,
-  government: 2500,
+  bank: 5000,
+  hospital: 5000,
+  pharmacy: 5000,
+  post_office: 5000,
+  government: 5000,
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -172,7 +173,7 @@ export const getNearbyPlaces = createServerFn({ method: "POST" })
     const baseRadius = CATEGORY_RADIUS[data.category] ?? data.radius;
     // Always widen in the background until we find a usable set of places, so
     // sparse areas still end up with a populated map.
-    const ladder = [baseRadius, 5000, 8000, 12000, 20000].filter(
+    const ladder = [baseRadius, 8000, 12000, 20000].filter(
       (radius, index, all) => all.indexOf(radius) === index,
     );
     const ENOUGH_RESULTS = 8;
