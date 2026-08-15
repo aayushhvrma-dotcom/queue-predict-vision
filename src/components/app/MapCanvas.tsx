@@ -117,6 +117,8 @@ export default function MapCanvas({
         attribution='&copy; OpenStreetMap contributors &copy; CARTO'
       />
       <Recenter center={center} zoom={zoom} />
+      {onAreaChange && <AreaWatcher onAreaChange={onAreaChange} />}
+
       {userPosition && (
         <>
           <Circle
