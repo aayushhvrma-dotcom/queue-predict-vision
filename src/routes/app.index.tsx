@@ -109,13 +109,34 @@ function MapPage() {
     locate();
   }, [locate]);
 
+  // Follow the live location: refetch whenever the user actually moves.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const next: [number, number] = [position.coords.latitude, position.coords.longitude];
+        setUserPosition(next);
+        setFetchCenter((prev) =>
+          haversineKm({ lat: prev[0], lng: prev[1] }, { lat: next[0], lng: next[1] }) > 0.4
+            ? next
+            : prev,
+        );
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 30000, timeout: 20000 },
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
   const placesQuery = useQuery({
-    queryKey: ["places", center[0].toFixed(3), center[1].toFixed(3), category],
+    queryKey: ["places", fetchCenter[0].toFixed(2), fetchCenter[1].toFixed(2), category],
     queryFn: async () =>
-      nearby({ data: { lat: center[0], lng: center[1], category, radius: 3000 } }),
+      nearby({ data: { lat: fetchCenter[0], lng: fetchCenter[1], category, radius: 3000 } }),
     staleTime: 5 * 60 * 1000,
+    placeholderData: (previous) => previous,
     retry: 1,
   });
+
 
   const placeRows = (placesQuery.data?.places ?? []) as PlaceRow[];
   const placeIds = useMemo(() => placeRows.map((place) => place.id), [placeRows]);
