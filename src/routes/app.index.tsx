@@ -64,7 +64,9 @@ function MapPage() {
   const geocode = useServerFn(geocodeLocation);
 
   const [center, setCenter] = useState<[number, number]>(DEFAULT_CENTER);
+  const [fetchCenter, setFetchCenter] = useState<[number, number]>(DEFAULT_CENTER);
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
+
   const [geoError, setGeoError] = useState<string | null>(null);
   const [locating, setLocating] = useState(true);
   const [category, setCategory] = useState<PlaceCategory>("bank");
