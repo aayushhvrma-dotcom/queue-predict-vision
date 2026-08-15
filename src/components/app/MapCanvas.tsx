@@ -87,8 +87,10 @@ export default function MapCanvas({
   places,
   selectedId,
   onSelect,
+  onAreaChange,
   zoom,
 }: MapCanvasProps) {
+
   const markers = useMemo(
     () =>
       places.map((place) => (
