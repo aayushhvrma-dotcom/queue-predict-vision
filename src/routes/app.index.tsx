@@ -389,17 +389,15 @@ function MapPage() {
             ))}
           </div>
 
-          {(geoError || placesQuery.isError || placesQuery.data?.degraded) && (
+          {(geoError || placesQuery.isError) && (
             <div className="qp-card mt-2 flex items-start gap-2 rounded-2xl px-4 py-2.5 text-xs text-qp-muted">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-qp-danger" />
               <span>
-                {geoError ??
-                  (placesQuery.isError
-                    ? "We couldn't load nearby places. Try again in a moment."
-                    : "Live place data is limited here — showing estimated locations.")}
+                {geoError ?? "We couldn't load nearby places. Try again in a moment."}
               </span>
             </div>
           )}
+
         </div>
       </div>
 
