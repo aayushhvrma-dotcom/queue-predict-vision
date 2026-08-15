@@ -88,9 +88,11 @@ function MapPage() {
         const next: [number, number] = [position.coords.latitude, position.coords.longitude];
         setUserPosition(next);
         setCenter(next);
+        setFetchCenter(next);
         setGeoError(null);
         setLocating(false);
       },
+
       (error) => {
         setGeoError(
           error.code === error.PERMISSION_DENIED
