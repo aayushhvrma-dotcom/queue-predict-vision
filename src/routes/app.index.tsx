@@ -265,7 +265,9 @@ function MapPage() {
       }
       const first = results[0]!;
       setCenter([first.lat, first.lng]);
+      setFetchCenter([first.lat, first.lng]);
       setQuery("");
+
       setSelectedId(null);
       toast.success(`Showing ${first.label.split(",")[0]}`);
     } catch {
