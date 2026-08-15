@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import L from "leaflet";
-import { MapContainer, Marker, TileLayer, useMap, Circle } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle } from "react-leaflet";
+
 
 import { levelMeta, type CrowdSummary } from "@/lib/queue";
 
@@ -58,14 +59,27 @@ function Recenter({ center, zoom }: { center: [number, number]; zoom?: number | 
   return null;
 }
 
+/** Reports the map's centre after the user pans/zooms so data can refetch. */
+function AreaWatcher({ onAreaChange }: { onAreaChange: (center: [number, number]) => void }) {
+  useMapEvents({
+    moveend: (event) => {
+      const c = event.target.getCenter();
+      onAreaChange([c.lat, c.lng]);
+    },
+  });
+  return null;
+}
+
 type MapCanvasProps = {
   center: [number, number];
   userPosition: [number, number] | null;
   places: MapPlace[];
   selectedId: string | null;
   onSelect: (place: MapPlace) => void;
+  onAreaChange?: (center: [number, number]) => void;
   zoom?: number;
 };
+
 
 export default function MapCanvas({
   center,
@@ -73,8 +87,10 @@ export default function MapCanvas({
   places,
   selectedId,
   onSelect,
+  onAreaChange,
   zoom,
 }: MapCanvasProps) {
+
   const markers = useMemo(
     () =>
       places.map((place) => (
@@ -101,6 +117,8 @@ export default function MapCanvas({
         attribution='&copy; OpenStreetMap contributors &copy; CARTO'
       />
       <Recenter center={center} zoom={zoom} />
+      {onAreaChange && <AreaWatcher onAreaChange={onAreaChange} />}
+
       {userPosition && (
         <>
           <Circle

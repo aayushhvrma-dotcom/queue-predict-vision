@@ -64,7 +64,9 @@ function MapPage() {
   const geocode = useServerFn(geocodeLocation);
 
   const [center, setCenter] = useState<[number, number]>(DEFAULT_CENTER);
+  const [fetchCenter, setFetchCenter] = useState<[number, number]>(DEFAULT_CENTER);
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
+
   const [geoError, setGeoError] = useState<string | null>(null);
   const [locating, setLocating] = useState(true);
   const [category, setCategory] = useState<PlaceCategory>("bank");
@@ -86,9 +88,11 @@ function MapPage() {
         const next: [number, number] = [position.coords.latitude, position.coords.longitude];
         setUserPosition(next);
         setCenter(next);
+        setFetchCenter(next);
         setGeoError(null);
         setLocating(false);
       },
+
       (error) => {
         setGeoError(
           error.code === error.PERMISSION_DENIED
@@ -105,13 +109,34 @@ function MapPage() {
     locate();
   }, [locate]);
 
+  // Follow the live location: refetch whenever the user actually moves.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const next: [number, number] = [position.coords.latitude, position.coords.longitude];
+        setUserPosition(next);
+        setFetchCenter((prev) =>
+          haversineKm({ lat: prev[0], lng: prev[1] }, { lat: next[0], lng: next[1] }) > 0.4
+            ? next
+            : prev,
+        );
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 30000, timeout: 20000 },
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
   const placesQuery = useQuery({
-    queryKey: ["places", center[0].toFixed(3), center[1].toFixed(3), category],
+    queryKey: ["places", fetchCenter[0].toFixed(2), fetchCenter[1].toFixed(2), category],
     queryFn: async () =>
-      nearby({ data: { lat: center[0], lng: center[1], category, radius: 3000 } }),
+      nearby({ data: { lat: fetchCenter[0], lng: fetchCenter[1], category, radius: 3000 } }),
     staleTime: 5 * 60 * 1000,
+    placeholderData: (previous) => previous,
     retry: 1,
   });
+
 
   const placeRows = (placesQuery.data?.places ?? []) as PlaceRow[];
   const placeIds = useMemo(() => placeRows.map((place) => place.id), [placeRows]);
@@ -240,7 +265,9 @@ function MapPage() {
       }
       const first = results[0]!;
       setCenter([first.lat, first.lng]);
+      setFetchCenter([first.lat, first.lng]);
       setQuery("");
+
       setSelectedId(null);
       toast.success(`Showing ${first.label.split(",")[0]}`);
     } catch {
@@ -300,7 +327,15 @@ function MapPage() {
             places={places}
             selectedId={selectedId}
             onSelect={(place) => setSelectedId(place.id)}
+            onAreaChange={(next) =>
+              setFetchCenter((prev) =>
+                haversineKm({ lat: prev[0], lng: prev[1] }, { lat: next[0], lng: next[1] }) > 0.8
+                  ? next
+                  : prev,
+              )
+            }
           />
+
         </Suspense>
       </ClientOnly>
 
@@ -354,17 +389,15 @@ function MapPage() {
             ))}
           </div>
 
-          {(geoError || placesQuery.isError || placesQuery.data?.degraded) && (
+          {(geoError || placesQuery.isError) && (
             <div className="qp-card mt-2 flex items-start gap-2 rounded-2xl px-4 py-2.5 text-xs text-qp-muted">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-qp-danger" />
               <span>
-                {geoError ??
-                  (placesQuery.isError
-                    ? "We couldn't load nearby places. Try again in a moment."
-                    : "Live place data is limited here — showing estimated locations.")}
+                {geoError ?? "We couldn't load nearby places. Try again in a moment."}
               </span>
             </div>
           )}
+
         </div>
       </div>
 
