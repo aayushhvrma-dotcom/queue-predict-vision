@@ -170,55 +170,32 @@ export const getNearbyPlaces = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => nearbySchema.parse(input))
   .handler(async ({ data }) => {
     const baseRadius = CATEGORY_RADIUS[data.category] ?? data.radius;
-    const expands =
-      data.category === "bank" || data.category === "pharmacy" || data.category === "government";
-    // Hard caps: never widen past MAX_RADIUS_M and never make more than
-    // MAX_ATTEMPTS Overpass calls, so a sparse area cannot cause over-fetching.
-    const MAX_RADIUS_M = 12000;
-    const MAX_ATTEMPTS = 4;
+    // Always widen in the background until we find a usable set of places, so
+    // sparse areas still end up with a populated map.
+    const ladder = [baseRadius, 5000, 8000, 12000, 20000].filter(
+      (radius, index, all) => all.indexOf(radius) === index,
+    );
     const ENOUGH_RESULTS = 8;
-    const ladder = (expands ? [baseRadius, 5000, 8000, 12000] : [baseRadius])
-      .filter((radius) => radius <= MAX_RADIUS_M)
-      .slice(0, MAX_ATTEMPTS);
 
     let rows: PlaceRow[] = [];
     let degraded = false;
-    const startedAt = Date.now();
-    let attempts = 0;
 
     for (const radius of ladder) {
-      attempts += 1;
-      const attemptStart = Date.now();
       try {
-        rows = await queryOverpass(data.lat, data.lng, data.category, radius);
+        const attempt = await queryOverpass(data.lat, data.lng, data.category, radius);
+        if (attempt.length > rows.length) rows = attempt;
         degraded = false;
-        console.info(
-          `[places] ${data.category} attempt ${attempts}/${ladder.length} radius=${radius}m results=${rows.length} in ${Date.now() - attemptStart}ms`,
-        );
-      } catch (error) {
+      } catch {
         degraded = true;
-        console.error(
-          `[places] ${data.category} attempt ${attempts}/${ladder.length} radius=${radius}m failed after ${Date.now() - attemptStart}ms:`,
-          error,
-        );
       }
-      if (rows.length >= ENOUGH_RESULTS) {
-        console.info(
-          `[places] ${data.category} stopped early at radius=${radius}m with ${rows.length} results`,
-        );
-        break;
-      }
+      if (rows.length >= ENOUGH_RESULTS) break;
     }
 
     if (rows.length === 0) {
       degraded = true;
       rows = fallbackPlaces(data.lat, data.lng, data.category);
-      console.warn(`[places] ${data.category} using demo fallback after ${attempts} attempt(s)`);
     }
 
-    console.info(
-      `[places] ${data.category} resolved ${rows.length} places in ${attempts} attempt(s), ${Date.now() - startedAt}ms, degraded=${degraded}`,
-    );
 
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
