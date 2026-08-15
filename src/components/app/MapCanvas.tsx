@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import L from "leaflet";
-import { MapContainer, Marker, TileLayer, useMap, Circle } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle } from "react-leaflet";
+
 
 import { levelMeta, type CrowdSummary } from "@/lib/queue";
 
