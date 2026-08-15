@@ -327,7 +327,15 @@ function MapPage() {
             places={places}
             selectedId={selectedId}
             onSelect={(place) => setSelectedId(place.id)}
+            onAreaChange={(next) =>
+              setFetchCenter((prev) =>
+                haversineKm({ lat: prev[0], lng: prev[1] }, { lat: next[0], lng: next[1] }) > 0.8
+                  ? next
+                  : prev,
+              )
+            }
           />
+
         </Suspense>
       </ClientOnly>
 
